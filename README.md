@@ -32,7 +32,7 @@
 
 13.通过微信支付对文章赞赏。
 
-14.赞赏后发送模版消息。
+14.分享到朋友圈
 
 15.web-view内嵌网页跳转。
 
@@ -48,7 +48,11 @@
 
 21.微信小程序广告
 
-22.支持PC端微信
+22.支持PC端微信，支持手机端横屏显示小程序
+
+23.支持WordPress相册
+
+24.图片支持小程序懒加载和识别二维码
 
 # 开源地址
 
@@ -58,11 +62,9 @@ https://github.com/iamxjb/winxin-app-watch-life.net
 
 1.https://git.oschina.net/iamxjb/winxin-app-watch-life.net
 
-2.https://code.aliyun.com/iamxjb/winxin-app-watch-life.net
+2.https://xjb.coding.net/p/winxin-app-watch-life.net
 
-3.https://coding.net/u/xjb/p/winxin-app-watch-life.net
-
-4.https://gitlab.com/xiajianbo/winxin-app-watch-life.net
+3.https://gitlab.com/xiajianbo/winxin-app-watch-life.net
 
 
 # 小程序访问微信二维码：
@@ -105,23 +107,10 @@ https://www.minapper.com
 
 # 微慕WordPress小程序专业版二维码
 
-1.微慕WordPress小程序专业标准版
-
 ![微慕WordPress小程序专业标准版](https://www.watch-life.net/images/minapper.jpg)
 
-2.微慕WordPress小程序专业旅游版
 
-![微慕WordPress小程序专业旅游版](https://www.watch-life.net/images/minapper-lv.jpg)
-
-3.微慕WordPress小程序专业企业版
-
-![微慕WordPress小程序专业企业版](https://www.watch-life.net/images/minapper-bi.jpg)
-
-4.微慕WordPress小程序专业图片版
-
-![微慕WordPress小程序专业图片版](https://www.watch-life.net/images/minapper-tu.jpg)
-
-# 微慕WordPress小程序增强版版二维码
+# 微慕WordPress小程序增强版二维码
 
 
 1.微慕WordPress小程序增强版微信版
@@ -174,6 +163,7 @@ https://www.minapper.com
 <a href="https://www.watch-life.net/wordpress/wordpress-weixin-2-4.html">11.WordPress版微信小程序2.4版发布</a>
 
 <a href="https://www.watch-life.net/wordpress/weixin-app-install.html" target="_blank" rel="noopener noreferrer">12.WordPress版微信小程序安装使用说明</a>
+
 <a href="https://www.watch-life.net/wordpress/wordpress-weixin-2-6.html" target="_blank" rel="noopener noreferrer">13.WordPress版微信小程序2.6版发布</a>
 
 <a href="https://www.watch-life.net/wordpress/wordpress-weixin-3-0.html" target="_blank" rel="noopener noreferrer">14.WordPress版微信小程序3.0版发布</a>
@@ -216,17 +206,33 @@ https://www.minapper.com
 
 ![weixinpay](https://www.watch-life.net/images/2017/07/zsm400-github.jpg) 
 
-
-
-# 微慕小程序开源版知识星球(小密圈)
-
-考虑到微信群里交流过于庞杂和碎片化，无法提供更专业的技术服务和知识分享，很多好的知识不能很好沉淀和积累，无法提供更好的分享价值，同时我也有意和兴趣相投人一起，创建一个wordpress和微信小程序的知识社区。基于此，我在“知识星球”里创建了一个“微慕小程序开源版”的圈子，欢迎有兴趣的朋友和我一起创建一个有活力、创造力、有趣、有深度的知识社群。
-
-![zhishixingqiu](https://www.watch-life.net/images/2017/11/xiaomiquan300.jpg)
  
 
 
 # 更新历史：
+
+## 2020年07月11日
+
+1.优化A标签支持跳转三种方式的跳转：其他小程序，本小程序，业务域名的网页(详见链接：https://www.watch-life.net/wechat/about-minapper-free-a-tag.html）
+
+2.修复分类页和搜索页，文章无图片不显示默认封面的问题
+
+3.给视频组件加封面
+
+4.优化详情页评论显示：详情加载后自动显示第一页评论；优化评论提交后的提示
+
+
+## 2020年07月11日
+
+加入“分享到朋友圈”功能
+
+## 2020年07月11日
+
+1.修复导航提示key错误。
+2.优化加载进度条。
+3.调整导航
+4.加入视频广告和插屏广告
+5.修复关于页面打赏无法显示的问题
 
 ## 2019年11月07日
 

@@ -66,8 +66,7 @@ Page({
     likeImag: "like.png",
     likeList: [],
     likeCount: 0,
-    displayLike: 'none',
-    replayTemplateId: config.getReplayTemplateId,
+    displayLike: 'none', 
     userid: "",
     toFromId: "",
     commentdate: "",
@@ -81,6 +80,7 @@ Page({
     userInfo: {},
     system: '',
     downloadFileDomain: config.getDownloadFileDomain,
+    businessDomain:config.getBusinessDomain,
 
     isPlayAudio: false,
     audioSeek: 0,
@@ -92,6 +92,7 @@ Page({
     shareImagePath: '',
     detailSummaryHeight: '',
     detailAdsuccess: true,
+    detailTopAdsuccess:true,
     fristOpen: false,
     domain:domain,
     detailSummaryHeight: '',
@@ -100,6 +101,14 @@ Page({
   },
   onLoad: function (options) {
     var self = this;
+    wx.showShareMenu({
+              withShareTicket:true,
+              menus:['shareAppMessage','shareTimeline'],
+              success:function(e)
+              {
+                //console.log(e);
+              }
+        })
     self.getEnableComment();
     self.fetchDetailData(options.id);
     Auth.setUserInfoData(self);
@@ -157,6 +166,20 @@ Page({
     }
 
   },
+
+   // 首次加载评论
+   fristOpenComment() {    
+    this.setData({   
+      page :1,
+      commentsList: [],
+      isLastPage: false
+    })
+    this.fetchCommentData();
+    this.setData({
+      page: this.data.page + 1,
+    });
+  },
+
   onShareAppMessage: function (res) {
     this.ShowHideMenu();
     console.log(res);
@@ -172,6 +195,17 @@ Page({
         console.log(res);
         // 转发失败
       }
+    }
+  },
+    // 自定义分享朋友圈
+  onShareTimeline: function() {
+    let imageUrl = this.data.detail.post_full_image
+    return {
+      title: this.data.detail.title.rendered,
+      query: {
+        id: this.data.detail.id
+      },
+      imageUrl
     }
   },
   gotowebpage: function () {
@@ -355,6 +389,7 @@ Page({
             showerror: 'block',
             display: 'none',
             detailAdsuccess:true,
+            detailTopAdsuccess:true,
             errMessage: response.data.message
           });
           return false;
@@ -472,6 +507,8 @@ Page({
         if (self.data.openid) {
           self.getIslike();
         }
+      }).then(res=>{
+          self.fristOpenComment();
       })
       .catch(function (error) {
         console.log('error: ' + error);
@@ -613,28 +650,93 @@ Page({
   wxParseTagATap: function (e) {
     var self = this;
     var href = e.currentTarget.dataset.src;
-    console.log(href);
+    let appid = e.currentTarget.dataset.appid;
+    let redirectype = e.currentTarget.dataset.redirectype;
+    let path = e.currentTarget.dataset.path;
+
+
+    // 判断a标签src里是不是插入的文档链接
+    let isDoc = /\.(doc|docx|xls|xlsx|ppt|pptx|pdf)$/.test(href)
+
+    if (isDoc) {
+      this.openLinkDoc(e)
+      return
+    }
+
+    if(redirectype) {
+      if (redirectype == 'apppage') { //跳转到小程序内部页面         
+        wx.navigateTo({
+          url: path
+        })
+      } else if (redirectype == 'webpage') //跳转到web-view内嵌的页面
+      {
+        href = '../webpage/webpage?url=' + href;
+        wx.navigateTo({
+          url: href
+        })
+      }
+      else if (redirectype == 'miniapp') //跳转其他小程序
+       {
+        wx.navigateToMiniProgram({
+          appId: appid,
+          path: path
+        })
+      }
+      return;
+    }
+
+
+    var enterpriseMinapp = self.data.detail.enterpriseMinapp;
     var domain = config.getDomain;
     //可以在这里进行一些路由处理
     if (href.indexOf(domain) == -1) {
-      wx.setClipboardData({
-        data: href,
-        success: function (res) {
-          wx.getClipboardData({
-            success: function (res) {
-              wx.showToast({
-                title: '链接已复制',
-                //icon: 'success',
-                image: '../../images/link.png',
-                duration: 2000
-              })
-            }
+
+      var n=0;
+      for (var i = 0; i < self.data.businessDomain.length; i++) {
+  
+        if (href.indexOf(self.data.businessDomain[i].domain) != -1) {
+          n++;
+          break;
+        }
+      }
+
+      if(n>0)
+      {
+        var url = '../webpage/webpage'
+        if (enterpriseMinapp == "1") {
+          url = '../webpage/webpage';
+          wx.navigateTo({
+            url: url + '?url=' + href
           })
         }
-      })
+        else {
+          self.copyLink(href);
+        }
+      }
+      else
+      {
+        self.copyLink(href);
+
+      }
+
     }
     else {
       var slug = util.GetUrlFileName(href, domain);
+      if(slug=="")
+      {
+          var url = '../webpage/webpage'
+          if (enterpriseMinapp == "1") {
+            url = '../webpage/webpage';
+            wx.navigateTo({
+              url: url + '?url=' + href
+            })
+          }
+          else {
+            self.copyLink(href);
+          }
+        return;
+
+      }
       if (slug == 'index') {
         wx.switchTab({
           url: '../index/index'
@@ -662,7 +764,7 @@ Page({
                 }
               }
               else {
-                var enterpriseMinapp = self.data.detail.enterpriseMinapp;
+                
                 var url = '../webpage/webpage'
                 if (enterpriseMinapp == "1") {
                   url = '../webpage/webpage';
@@ -686,6 +788,56 @@ Page({
     }
 
   },
+
+   // 打开文档
+   openLinkDoc(e) {
+    let self = this
+    let url
+    let fileType
+    
+    // 如果是a标签href中插入的文档
+    let src = e.currentTarget.dataset.src
+    var n=0;
+    for (var i = 0; i < self.data.downloadFileDomain.length; i++) {
+
+      if (src.indexOf(self.data.downloadFileDomain[i].domain) != -1) {
+        n++;
+        break;
+      }
+    }
+
+    if(n==0)
+    {
+      self.copyLink(src);
+      return;
+    }
+
+    let docType
+    let isDoc = /\.(doc|docx|xls|xlsx|ppt|pptx|pdf)$/.test(src)
+
+    if (src && isDoc){
+      url = src
+      fileType = /doc|docx|xls|xlsx|ppt|pptx|pdf$/.exec(src)[0]
+    } else {
+      url = e.currentTarget.dataset.filelink
+      fileType = e.currentTarget.dataset.filetype
+    }
+
+    wx.downloadFile({
+      url: url,
+      success: function (res) {
+        const filePath = res.tempFilePath
+        wx.openDocument({
+          filePath: filePath,
+          fieldType: fileType
+        })
+      },
+      fail: function (error) {
+        console.log('下载文档失败:' + error)
+      }
+    })
+  },
+
   //获取评论
   fetchCommentData: function () {
     var self = this;
@@ -757,17 +909,13 @@ Page({
     var id = e.target.dataset.id;
     var name = e.target.dataset.name;
     var userid = e.target.dataset.userid;
-    var toFromId = e.target.dataset.formid;
-    var commentdate = e.target.dataset.commentdate;
     isFocusing = true;
     if (self.data.enableComment == "1") {
       self.setData({
         parentID: id,
         placeholder: "回复" + name + ":",
         focus: true,
-        userid: userid,
-        toFromId: toFromId,
-        commentdate: commentdate
+        userid: userid    
       });
 
     }
@@ -784,9 +932,7 @@ Page({
           self.setData({
             parentID: "0",
             placeholder: "评论...",
-            userid: "",
-            toFromId: "",
-            commentdate: ""
+            userid: ""         
           });
         }
 
@@ -806,15 +952,8 @@ Page({
     var self = this;
     var comment = e.detail.value.inputComment;
     var parent = self.data.parentID;
-    var postID = e.detail.value.inputPostID;
-    var formId = e.detail.formId;
-    if (formId == "the formId is a mock one") {
-      formId = "";
-
-    }
+    var postID = e.detail.value.inputPostID;    
     var userid = self.data.userid;
-    var toFromId = self.data.toFromId;
-    var commentdate = self.data.commentdate;
     if (comment.length === 0) {
       self.setData({
         'dialog.hidden': false,
@@ -829,7 +968,7 @@ Page({
         var author_url = self.data.userInfo.avatarUrl;
         var email = self.data.openid + "@qq.com";
         var openid = self.data.openid;
-        var fromUser = self.data.userInfo.nickName;
+     
         var data = {
           post: postID,
           author_name: name,
@@ -838,8 +977,7 @@ Page({
           author_url: author_url,
           parent: parent,
           openid: openid,
-          userid: userid,
-          formId: formId
+          userid: userid
         };
         var url = Api.postWeixinComment();
         var postCommentRequest = wxRequest.postRequest(url, data);
@@ -847,8 +985,10 @@ Page({
         postCommentRequest
           .then(res => {
             console.log(res)
-            if (res.statusCode == 200) {
-              if (res.data.status == '200') {
+            var code =res.data.code;
+            if(res.data.code =='success')
+            {
+
                 self.setData({
                   content: '',
                   parentID: "0",
@@ -858,108 +998,85 @@ Page({
                   commentsList: []
 
                 });
-                postCommentMessage = res.data.message;
-                if (parent != "0" && !util.getDateOut(commentdate) && toFromId != "") {
-                  var useropenid = res.data.useropenid;
-                  var data =
-                  {
-                    openid: useropenid,
-                    postid: postID,
-                    template_id: self.data.replayTemplateId,
-                    form_id: toFromId,
-                    total_fee: comment,
-                    fromUser: fromUser,
-                    flag: 3,
-                    parent: parent
-                  };
 
-                  url = Api.sendMessagesUrl();
-                  var sendMessageRequest = wxRequest.postRequest(url, data);
-                  sendMessageRequest.then(response => {
-                    if (response.data.status == '200') {
-                      //console.log(response.data.message);
-                    }
-                    else {
-                      console.log(response.data.message);
-
-                    }
-
-                  });
-
-                }
+                wx.showToast({
+                  title: res.data.message,
+                  mask: false,
+                  icon: "none",
+                  duration: 3000
+                });
+                postCommentMessage = res.data.message;                
                 var commentCounts = parseInt(self.data.total_comments) + 1;
                 self.setData({
                   total_comments: commentCounts,
                   commentCount: "有" + commentCounts + "条评论"
 
                 });
-              }
-              else if (res.data.status == '500') {
-                self.setData({
-                  'dialog.hidden': false,
-                  'dialog.title': '提示',
-                  'dialog.content': '评论失败，请稍后重试。'
-
-                });
-              }
-            }
+            
+            }            
             else {
 
               if (res.data.code == 'rest_comment_login_required') {
-                self.setData({
-                  'dialog.hidden': false,
-                  'dialog.title': '提示',
-                  'dialog.content': '需要开启在WordPress rest api 的匿名评论功能！'
-
-                });
-              }
-              else if (res.data.code == 'rest_invalid_param' && res.data.message.indexOf('author_email') > 0) {
-                self.setData({
-                  'dialog.hidden': false,
-                  'dialog.title': '提示',
-                  'dialog.content': 'email填写错误！'
-
-                });
-              }
-              else {
-                console.log(res)
-                self.setData({
-                  'dialog.hidden': false,
-                  'dialog.title': '提示',
-                  'dialog.content': '评论失败,' + res.data.message
-
-                });
-              }
-            }
-          }).then(response => {
-            //self.fetchCommentData(self.data); 
-            self.setData(
-              {
-                page: 1,
-                commentsList: [],
-                isLastPage: false
-
-              }
-            )
-            self.onReachBottom();
-            //self.fetchCommentData();
-            setTimeout(function () {
               wx.showToast({
-                title: postCommentMessage,
+                title: '需要开启在WordPress rest api 的匿名评论功能！',
                 icon: 'none',
-                duration: 900,
+                duration: 3000,
                 success: function () {
                 }
               })
-            }, 900);
+
+               
+              }
+              else if (res.data.code == 'rest_invalid_param' && res.data.message.indexOf('author_email') > 0) {
+                wx.showToast({
+                  title:  'email填写错误！',
+                  icon: 'none',
+                  duration: 3000,
+                  success: function () {
+                  }
+                })
+               
+              }
+              else if (res.data.code == '87014') {
+                wx.showToast({
+                  title:  '内容含有违法违规内容!',
+                  icon: 'none',
+                  duration: 3000,
+                  success: function () {
+                  }
+                })
+               
+              }
+              else {
+                console.log(res)
+                wx.showToast({
+                  title:  res.data.message,
+                  icon: 'none',
+                  duration: 3000,
+                  success: function () {
+                  }
+                })               
+              }
+            }
+
+            return res ;
+          }).then(res => {
+            
+            if(res.data.code=='success' && res.data.comment_approved=="1")
+            {
+              
+              self.fristOpenComment();  
+            }
+                     
           }).catch(response => {
             console.log(response)
-            self.setData({
-              'dialog.hidden': false,
-              'dialog.title': '提示',
-              'dialog.content': '评论失败,' + response
-
-            });
+            wx.showToast({
+              title:  '评论失败:'+response,
+              icon: 'none',
+              duration: 3000,
+              success: function () {
+              }
+            })  
           })
       }
       else {
@@ -1204,13 +1321,26 @@ Page({
       }
     });
   },
-  detailAdbinderror: function (e) {
+  adbinderror: function (e) {
     var self = this;
-    if (e.errCode) {
+    console.log(e.detail.errCode);
+    console.log(e.detail.errMsg);
+    if (e.detail.errCode) {
       self.setData({ detailAdsuccess: false })
 
     }
   },
+
+  adTopbinderror: function (e) {
+    var self = this;
+    console.log(e.detail.errCode);
+    console.log(e.detail.errMsg)
+    if (e.detail.errCode) {
+      self.setData({ detailTopAdsuccess: false })
+
+    }
+  },
+
 
   loadInterstitialAd: function (excitationAdId) {
     var self = this;

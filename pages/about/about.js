@@ -41,7 +41,9 @@ Page({
     openid:"",
     system:"",
     webSiteName:webSiteName,
-    domain:domain
+    domain:domain,
+    downloadFileDomain: config.getDownloadFileDomain,
+    businessDomain:config.getBusinessDomain,
    
     
   },
@@ -57,17 +59,24 @@ Page({
 
         }
       })
+    // 设置系统分享菜单
+    wx.showShareMenu({
+      withShareTicket: true,
+      menus: ['shareAppMessage', 'shareTimeline']
+    })
   },
+ 
   praise: function () {     
       
       var self = this;
       var enterpriseMinapp = self.data.pageData.enterpriseMinapp;
       var system  =self.data.system;
       var praiseWord=self.data.pageData.praiseWord;
+      var postid=self.data.pageData.id;
       if (enterpriseMinapp == "1"  && system=='Android') {
           if (self.data.openid) {
               wx.navigateTo({
-                  url: '../pay/pay?flag=2&openid=' + self.data.openid + '&postid=' + config.getAboutId+'&praiseWord='+praiseWord
+                  url: '../pay/pay?flag=2&openid=' + self.data.openid + '&postid=' + postid +'&praiseWord='+praiseWord
               })
           }
           else {
@@ -100,7 +109,7 @@ Page({
   },  
   onShareAppMessage: function () {
     return {
-      title: '关于“' + config.getWebsiteName +'”官方小程序',
+      title: '关于“' + config.getWebsiteName +'”小程序',
       path: 'pages/about/about',
       success: function (res) {
         // 转发成功
@@ -110,6 +119,14 @@ Page({
       }
     }
   },
+   // 自定义分享朋友圈
+   onShareTimeline: function() {
+    return {
+      title: '关于“' + config.getWebsiteName +'”小程序',
+      path: 'pages/about/about'      
+    }
+  },
+
   gotowebpage:function()
   {
       var self=this;
@@ -143,63 +160,228 @@ Page({
             }
         })
     },
-  //给a标签添加跳转和复制链接事件
-  wxParseTagATap: function (e) {
-      var self = this;
-      var href = e.currentTarget.dataset.src;
-      console.log(href);
-      var domain = config.getDomain;
-      //我们可以在这里进行一些路由处理
-      if (href.indexOf(domain) == -1) {
-          wx.setClipboardData({
-              data: href,
-              success: function (res) {
-                  wx.getClipboardData({
-                      success: function (res) {
-                          wx.showToast({
-                              title: '链接已复制',
-                              //icon: 'success',
-                              image: '../../images/link.png',
-                              duration: 2000
-                          })
-                      }
-                  })
-              }
-          })
-      }
-      else {
+ //给a标签添加跳转和复制链接事件
+ wxParseTagATap: function (e) {
+    var self = this;
+    var href = e.currentTarget.dataset.src;
+    let appid = e.currentTarget.dataset.appid;
+    let redirectype = e.currentTarget.dataset.redirectype;
+    let path = e.currentTarget.dataset.path;
 
-          var slug = util.GetUrlFileName(href, domain);
-          if (slug == 'index') {
-              wx.switchTab({
-                  url: '../index/index'
-              })
+
+    // 判断a标签src里是不是插入的文档链接
+    let isDoc = /\.(doc|docx|xls|xlsx|ppt|pptx|pdf)$/.test(href)
+
+    if (isDoc) {
+      this.openLinkDoc(e)
+      return
+    }
+
+    if(redirectype) {
+      if (redirectype == 'apppage') { //跳转到小程序内部页面         
+        wx.navigateTo({
+          url: path
+        })
+      } else if (redirectype == 'webpage') //跳转到web-view内嵌的页面
+      {
+        href = '../webpage/webpage?url=' + href;
+        wx.navigateTo({
+          url: href
+        })
+      }
+      else if (redirectype == 'miniapp') //跳转其他小程序
+       {
+        wx.navigateToMiniProgram({
+          appId: appid,
+          path: path
+        })
+      }
+      return;
+    }
+
+
+    var enterpriseMinapp = self.data.pageData.enterpriseMinapp;
+    var domain = config.getDomain;
+    //可以在这里进行一些路由处理
+    if (href.indexOf(domain) == -1) {
+
+      var n=0;
+      for (var i = 0; i < self.data.businessDomain.length; i++) {
+  
+        if (href.indexOf(self.data.businessDomain[i].domain) != -1) {
+          n++;
+          break;
+        }
+      }
+
+      if(n>0)
+      {
+        var url = '../webpage/webpage'
+        if (enterpriseMinapp == "1") {
+          url = '../webpage/webpage';
+          wx.navigateTo({
+            url: url + '?url=' + href
+          })
+        }
+        else {
+          self.copyLink(href);
+        }
+      }
+      else
+      {
+        self.copyLink(href);
+
+      }
+
+
+      // wx.setClipboardData({
+      //   data: href,
+      //   success: function (res) {
+      //     wx.getClipboardData({
+      //       success: function (res) {
+      //         wx.showToast({
+      //           title: '链接已复制',
+      //           //icon: 'success',
+      //           image: '../../images/link.png',
+      //           duration: 2000
+      //         })
+      //       }
+      //     })
+      //   }
+      // })
+    }
+    else {
+      var slug = util.GetUrlFileName(href, domain);
+      if(slug=="")
+      {
+          var url = '../webpage/webpage'
+          if (enterpriseMinapp == "1") {
+            url = '../webpage/webpage';
+            wx.navigateTo({
+              url: url + '?url=' + href
+            })
           }
           else {
-              var getPostSlugRequest = wxRequest.getRequest(Api.getPostBySlug(slug));
-              getPostSlugRequest
-                  .then(res => {
-                      var postID = res.data[0].id;
-                      var openLinkCount = wx.getStorageSync('openLinkCount') || 0;
-                      if (openLinkCount > 4) {
-                          wx.redirectTo({
-                              url: '../detail/detail?id=' + postID
-                          })
-                      }
-                      else {
-                          wx.navigateTo({
-                              url: '../detail/detail?id=' + postID
-                          })
-                          openLinkCount++;
-                          wx.setStorageSync('openLinkCount', openLinkCount);
-                      }
-
-                  })
-
+            self.copyLink(href);
           }
+        return;
 
       }
+      if (slug == 'index') {
+        wx.switchTab({
+          url: '../index/index'
+        })
+      }
+      else {
+        var getPostSlugRequest = wxRequest.getRequest(Api.getPostBySlug(slug));
+        getPostSlugRequest
+          .then(res => {
+            if (res.statusCode == 200) {
+              if (res.data.length != 0) {
+                var postID = res.data[0].id;
+                var openLinkCount = wx.getStorageSync('openLinkCount') || 0;
+                if (openLinkCount > 4) {
+                  wx.redirectTo({
+                    url: '../detail/detail?id=' + postID
+                  })
+                }
+                else {
+                  wx.navigateTo({
+                    url: '../detail/detail?id=' + postID
+                  })
+                  openLinkCount++;
+                  wx.setStorageSync('openLinkCount', openLinkCount);
+                }
+              }
+              else {
+                
+                var url = '../webpage/webpage'
+                if (enterpriseMinapp == "1") {
+                  url = '../webpage/webpage';
+                  wx.navigateTo({
+                    url: url + '?url=' + href
+                  })
+                }
+                else {
+                  self.copyLink(href);
+                }
 
+
+              }
+
+            }
+
+          }).catch(res => {
+            console.log(response.data.message);
+          })
+      }
+    }
+
+  },
+
+   // 打开文档
+   openLinkDoc(e) {
+    let self = this
+    let url
+    let fileType
+    
+    // 如果是a标签href中插入的文档
+    let src = e.currentTarget.dataset.src
+    var n=0;
+    for (var i = 0; i < self.data.downloadFileDomain.length; i++) {
+
+      if (src.indexOf(self.data.downloadFileDomain[i].domain) != -1) {
+        n++;
+        break;
+      }
+    }
+
+    if(n==0)
+    {
+      self.copyLink(src);
+      return;
+    }
+
+    let docType
+    let isDoc = /\.(doc|docx|xls|xlsx|ppt|pptx|pdf)$/.test(src)
+
+    if (src && isDoc){
+      url = src
+      fileType = /doc|docx|xls|xlsx|ppt|pptx|pdf$/.exec(src)[0]
+    } else {
+      url = e.currentTarget.dataset.filelink
+      fileType = e.currentTarget.dataset.filetype
+    }
+
+    wx.downloadFile({
+      url: url,
+      success: function (res) {
+        const filePath = res.tempFilePath
+        wx.openDocument({
+          filePath: filePath,
+          fieldType: fileType
+        })
+      },
+      fail: function (error) {
+        console.log('下载文档失败:' + error)
+      }
+    })
+  },
+  copyLink: function (url) {
+    wx.setClipboardData({
+      data: url,
+      success: function (res) {
+        wx.getClipboardData({
+          success: function (res) {
+            wx.showToast({
+              title: '链接已复制',
+              image: '../../images/link.png',
+              duration: 2000
+            })
+          }
+        })
+      }
+    })
   },
   agreeGetUser: function (e) {
   

@@ -77,6 +77,14 @@ Page({
       }
     }
   },
+   // 自定义分享朋友圈
+   onShareTimeline: function() {   
+    return {
+      title:  "“"+ webSiteName +"”的文章排行",
+      path: 'pages/hot/hot' ,
+      
+    }
+  },
   reload:function(e)
   {
     var self = this;   
@@ -109,6 +117,14 @@ Page({
   
   onLoad: function (options) {
     var self = this;
+    wx.showShareMenu({
+            withShareTicket:true,
+            menus:['shareAppMessage','shareTimeline'],
+            success:function(e)
+            {
+              //console.log(e);
+            }
+      })
     this.fetchPostsData("1");
         
   },

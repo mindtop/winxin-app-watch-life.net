@@ -18,20 +18,17 @@ var wxRequest = require('../../utils/wxRequest.js')
 
 import config from '../../utils/config.js'
 var pageCount = config.getPageCount;
-var webSiteName= config.getWebsiteName;
-var domain =config.getDomain
+
 Page({
     data: {
         title: '最新评论列表',
         showerror: "none",
         showallDisplay: "block",
-        readLogs: [],
-        webSiteName:webSiteName,
-        domain:domain
+        readLogs: []
 
     },
     onShareAppMessage: function () {
-        var title = "分享"+webSiteName+"的最新评论";
+        var title = "分享"+config.getWebsiteName+"的最新评论";
         var path = "pages/comments/comments";
         return {
             title: title,
@@ -44,6 +41,14 @@ Page({
             }
         }
     },
+    // 自定义分享朋友圈
+   onShareTimeline: function() {
+    return {
+      title: '“' + config.getWebsiteName +'”最新评论',
+      path: 'pages/comments/comments' ,
+      imageUrl:"../../images/comments.jpg"     
+    }
+  },
     reload: function (e) {
         var self = this;
         this.setData({
@@ -58,6 +63,14 @@ Page({
     },
     onLoad: function (options) {
         var self = this;
+        wx.showShareMenu({
+                  withShareTicket:true,
+                  menus:['shareAppMessage','shareTimeline'],
+                  success:function(e)
+                  {
+                    //console.log(e);
+                  }
+            })
         self.fetchCommentsData();
     },
     //获取文章列表数据

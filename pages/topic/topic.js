@@ -35,6 +35,15 @@ Page({
         wx.setNavigationBarTitle({
             title: '专题'
         });
+
+        wx.showShareMenu({
+                  withShareTicket:true,
+                  menus:['shareAppMessage','shareTimeline'],
+                  success:function(e)
+                  {
+                    //console.log(e);
+                  }
+            })
         
         this.fetchCategoriesData();
         
@@ -107,7 +116,15 @@ Page({
                 // 转发失败
             }
         }
-    },    
+    },
+    // 自定义分享朋友圈
+   onShareTimeline: function() {
+    return {
+      title:  '“' + config.getWebsiteName + '”的专题栏目',
+      path: 'pages/topic/topic' ,
+      
+    }
+  },    
     postsub: function (e) {
         var self = this;
         if (!self.data.openid) {

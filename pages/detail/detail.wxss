@@ -20,12 +20,8 @@
 /* 文章正文样式 */
 
 .entry-summary {
-  /* font-size: 15px;
-  line-height: 2; */
-
   font-size: 32rpx;
   line-height: 64rpx;
-  letter-spacing: 1px;
   overflow: hidden;
   overflow-x: hidden;
   position: relative;
@@ -705,13 +701,29 @@
 
 /* 音频 */
 
+
+
 /* 小程序广告 */
+.ad-box {
+  width: 100%;
+  overflow: hidden;
+}
 
 .ad-box-video {
-  /* padding: 20 5rpx; */
-  margin: 12rpx auto 0;
+  /* padding: 40rpx 40rpx 0;
+  margin: 0 auto; */
+  width: 100%;
   overflow: hidden;
-  /* width: 400px !important; */
+  margin: 40rpx auto; 
+  position: relative;
+  z-index: 1;
+}
+ad {
+z-index: 1!important;
+
+}
+video {
+z-index: 1!important;
 
 }
 
